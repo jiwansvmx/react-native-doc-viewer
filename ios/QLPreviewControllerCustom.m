@@ -2,19 +2,26 @@
 
 @implementation QLPreviewControllerCustom
 
+#define SYSTEM_VERSION_LESS_THAN(v) ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedAscending)
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.orientations = [[UIApplication sharedApplication] statusBarOrientation];
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction
-                                                                                           target:self
-                                                                                           action:@selector(shareAction)];
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
+        // Only need to add share button for iPhone, iPad navBar UI already has a share button
+        self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction
+                                                                                            target:self
+                                                                                            action:@selector(shareAction)];
+    }
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     UINavigationBar *navigationBar = [self getNavigationBarFromView:self.view];
     [navigationBar setHidden:YES];
-    [self removeDefaultShareButton:navigationBar];
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone && SYSTEM_VERSION_LESS_THAN(@"16.0")) {
+        [self removeDefaultShareButton:navigationBar];
+    }
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -26,18 +33,24 @@
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     UINavigationBar *navigationBar = [self getNavigationBarFromView:self.view];
-    [self removeDefaultShareButton:navigationBar];
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone && SYSTEM_VERSION_LESS_THAN(@"16.0")) {
+        [self removeDefaultShareButton:navigationBar];
+    }
 }
 
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
     UINavigationBar *navigationBar = [self getNavigationBarFromView:self.view];
-    [self removeDefaultShareButton:navigationBar];
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone && SYSTEM_VERSION_LESS_THAN(@"16.0")) {
+        [self removeDefaultShareButton:navigationBar];
+    }
 }
 
 - (void)showNavBar:(NSTimer *)timer {
     UINavigationBar *navigationBar = [self getNavigationBarFromView:self.view];
-    [self removeDefaultShareButton:navigationBar];
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone && SYSTEM_VERSION_LESS_THAN(@"16.0")) {
+        [self removeDefaultShareButton:navigationBar];
+    }
     [navigationBar setHidden:NO];
 }
 
@@ -66,9 +79,20 @@
     if (nvBar) {
         UINavigationItem *item = nvBar.items.firstObject;
         if (item.rightBarButtonItems.count > 1) {
-            UIBarButtonItem* button = item.rightBarButtonItems[item.rightBarButtonItems.count - 1];
-            NSArray * buttons = @[button];
-            [item setRightBarButtonItems:buttons];
+            UIBarButtonItem* button = nil;
+            for (UIBarButtonItem* btn in item.rightBarButtonItems)
+            {
+                NSString *className = NSStringFromClass([btn class]);
+                // The custom share button is of "UIBarButtonItem" class while other buttons are of "QLBarButtonItem" (iOS 16) or "QLToolbarButtonItemRepresentation" (iOS 15)
+                if ([className isEqualToString:@"UIBarButtonItem"]) {
+                    button = btn;
+                    break;
+                }
+            }
+            if (button != nil) {
+                NSArray * buttons = @[button];
+                [item setRightBarButtonItems:buttons];
+            }
         }
     }
 }
