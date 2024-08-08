@@ -59,6 +59,7 @@ RCT_EXPORT_METHOD(openDoc:(NSArray *)array callback:(RCTResponseSenderBlock)call
         NSString* fileNameOptional = dict[@"fileName"];
         NSString* fileType = dict[@"fileType"];
         NSURL* url = [NSURL URLWithString:[urlStr stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+        BOOL blockShare = dict[@"blockShare"];
         
         RCTLogInfo(@"Url %@", url);
         RCTLogInfo(@"FileNameOptional %@", fileNameOptional);
@@ -122,6 +123,7 @@ RCT_EXPORT_METHOD(openDoc:(NSArray *)array callback:(RCTResponseSenderBlock)call
             cntr.dataSource = weakSelf;
             cntr.fileUrl = weakSelf.fileUrl;
             cntr.fileName = fileNameOptional ? fileNameOptional : fileName;
+            cntr.blockShare = blockShare;
             
             if (callback) {
                 callback(@[[NSNull null], array]);

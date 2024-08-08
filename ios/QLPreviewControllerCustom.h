@@ -5,4 +5,5 @@
 @property (assign,nonatomic) NSURL *fileUrl;
 @property (assign,nonatomic) NSString *fileName;
 @property (assign,nonatomic) UIInterfaceOrientation orientations;
+@property (assign,nonatomic) BOOL blockShare;
 @end

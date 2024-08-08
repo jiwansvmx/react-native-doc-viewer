@@ -64,8 +64,9 @@ public class RNDocViewerModule extends ReactContextBaseJavaModule {
             final String fileType =arg_object.getString("fileType");
             final Boolean cache =arg_object.getBoolean("cache");
             final byte[] bytesData = new byte[0];
+            final Boolean blockShare = arg_object.getBoolean("blockShare");
             // Begin the Download Task
-            new FileDownloaderAsyncTask(callback, url, cache, fileName, fileType, bytesData).execute();
+            new FileDownloaderAsyncTask(callback, url, cache, fileName, fileType, bytesData, blockShare).execute();
         }else{
             callback.invoke(false);
         }
@@ -85,11 +86,12 @@ public class RNDocViewerModule extends ReactContextBaseJavaModule {
             final String fileName =arg_object.getString("fileName");
             final String fileType =arg_object.getString("fileType");
             final Boolean cache = arg_object.getBoolean("cache");
+            final Boolean blockShare = arg_object.getBoolean("blockShare");
             //Bytes
             final byte[] bytesData = android.util.Base64.decode(base64,android.util.Base64.DEFAULT);
             System.out.println("BytesData" + bytesData);
             // Begin the Download Task
-            new FileDownloaderAsyncTask(callback, "", cache, fileName, fileType, bytesData).execute();
+            new FileDownloaderAsyncTask(callback, "", cache, fileName, fileType, bytesData, blockShare).execute();
         }else{
             callback.invoke(false);
         }
@@ -111,8 +113,9 @@ public class RNDocViewerModule extends ReactContextBaseJavaModule {
             final String fileType =arg_object.getString("fileType");
             final Boolean cache =arg_object.getBoolean("cache");
             final byte[] bytesData = new byte[0];
+            final Boolean blockShare = arg_object.getBoolean("blockShare");
             // Begin the Download Task
-            new FileDownloaderAsyncTask(callback, url, cache, fileName, fileType, bytesData).execute();
+            new FileDownloaderAsyncTask(callback, url, cache, fileName, fileType, bytesData, blockShare).execute();
         }else{
             callback.invoke(false);
         }
@@ -405,9 +408,10 @@ public class RNDocViewerModule extends ReactContextBaseJavaModule {
         private final Boolean cache;
         private final String fileType;
         private final byte[] bytesData;
+        private final Boolean blockShare;
 
         public FileDownloaderAsyncTask(Callback callback,
-                String url, Boolean cache, String fileName, String fileType, byte[] bytesData) {
+                String url, Boolean cache, String fileName, String fileType, byte[] bytesData, Boolean blockShare) {
             super();
             this.callback = callback;
             this.url = url;
@@ -415,6 +419,7 @@ public class RNDocViewerModule extends ReactContextBaseJavaModule {
             this.cache = cache;
             this.fileType = fileType;
             this.bytesData = bytesData;
+            this.blockShare = blockShare;
         }
 
         @Override
@@ -464,7 +469,13 @@ public class RNDocViewerModule extends ReactContextBaseJavaModule {
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setDataAndType(contentUri, mimeType);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                // GO-21944 no sharing on fedramp
+                if (blockShare) {
+                    intent.setPackage(context.getPackageName());
+                } else {
+                    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                }
 
                 // In android API 30, the intent.resolveActivity(context.getPackageManager()) return null,
                 // but context.startActivity(intent) execute without error. So move

@@ -7,7 +7,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.orientations = [[UIApplication sharedApplication] statusBarOrientation];
-    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone && !self.blockShare) {
         // Only need to add share button for iPhone, iPad navBar UI already has a share button
         self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction
                                                                                             target:self
@@ -41,6 +41,10 @@
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
     UINavigationBar *navigationBar = [self getNavigationBarFromView:self.view];
+    if (self.blockShare) {
+        [self removeTitleShareMenu:navigationBar];
+    }
+    
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone && SYSTEM_VERSION_LESS_THAN(@"16.0")) {
         [self removeDefaultShareButton:navigationBar];
     }
@@ -48,6 +52,10 @@
 
 - (void)showNavBar:(NSTimer *)timer {
     UINavigationBar *navigationBar = [self getNavigationBarFromView:self.view];
+    if (self.blockShare) {
+        [self removeTitleShareMenu:navigationBar];
+    }
+    
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone && SYSTEM_VERSION_LESS_THAN(@"16.0")) {
         [self removeDefaultShareButton:navigationBar];
     }
@@ -75,6 +83,22 @@
     }
 }
 
+- (void)removeTitleShareMenu:(UIView *)view {
+    for (UIView *v in view.subviews) {
+        NSString *className = NSStringFromClass([v class]);
+        if ([className isEqualToString:@"_UINavigationBarContentView"] || [className isEqualToString:@"UIView"]) {
+            [self removeTitleShareMenu:v];
+        }
+        else if ([className isEqualToString:@"_UINavigationBarTitleControl"]) {
+            v.userInteractionEnabled = false;
+            [self removeTitleShareMenu:v];
+        }
+        else if ([className isEqualToString:@"UIImageView"]) {
+            [v removeFromSuperview];
+        }
+    }
+}
+
 - (void)removeDefaultShareButton:(UINavigationBar*)nvBar {
     if (nvBar) {
         UINavigationItem *item = nvBar.items.firstObject;
@@ -84,7 +108,7 @@
             {
                 NSString *className = NSStringFromClass([btn class]);
                 // The custom share button is of "UIBarButtonItem" class while other buttons are of "QLBarButtonItem" (iOS 16) or "QLToolbarButtonItemRepresentation" (iOS 15)
-                if ([className isEqualToString:@"UIBarButtonItem"]) {
+                if ([className isEqualToString:@"UIBarButtonItem"] || [className isEqualToString:@"QLBarButtonItem"]) {
                     button = btn;
                     break;
                 }
